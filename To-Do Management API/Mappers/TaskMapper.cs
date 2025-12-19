@@ -29,7 +29,8 @@ public static class TaskMapper
             Status = dto.Status,
             Priority = dto.Priority,
             CreatedAt = DateTime.Now,
-            UserId = 1
+            DueDate =  dto.DueDate,
+            UserId = dto.UserId
         };
     }
 

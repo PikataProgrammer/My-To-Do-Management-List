@@ -10,5 +10,6 @@ public class CreateTaskRequestDto
     public string Priority { get; set; } = "Medium"; // "Low", "Medium", "High"
     
     public DateTime? DueDate { get; set; }
+    public int UserId { get; set; } 
     
 }

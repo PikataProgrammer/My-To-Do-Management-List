@@ -1,4 +1,4 @@
-﻿using System.Xml.Serialization;
+﻿using To_Do_Management_API.Dtos.TaskDto;
 using To_Do_Management_API.Dtos.UserDto;
 using To_Do_Management_API.Entities;
 
@@ -13,8 +13,7 @@ public static class UserMapper
             Id = user.Id,
             Name = user.Name,
             Email = user.Email,
-            Password = user.Password,
-            Tasks =  user.Tasks
+            Tasks = user.Tasks.Select(t => t.ToTaskDto()).ToList()
         };
     }
 

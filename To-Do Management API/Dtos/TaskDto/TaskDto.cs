@@ -13,5 +13,5 @@ public class TaskDto
     public DateTime CreatedAt { get; set; } = DateTime.Now;
     public DateTime? DueDate { get; set; }
 
-    public int UserId { get; set; } = 1;
+    public int UserId { get; set; }
 }

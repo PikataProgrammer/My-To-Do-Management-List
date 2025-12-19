@@ -51,6 +51,24 @@ public class UserController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateAsync(int id, [FromBody] UpdateUserRequestDto dto)
     {
+        var user = await _userRepo.UpdateAsync(id, dto.ToUserFromUpdateUserDto());
+        if (user == null)
+        {
+            return NotFound();
+        }
         
+        return Ok(user.ToUserDto());
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteAsync(int id)
+    {
+        var existingUser = await _userRepo.DeleteAsync(id);
+        if (existingUser == null)
+        {
+            return NotFound();
+        }
+        
+        return NoContent();
     }
 }

@@ -14,13 +14,16 @@ public class UserRepository : IUserRepository
     }
     public async Task<List<User>> GetAllAsync()
     {
-        return await _context.Users.ToListAsync();
+        return await _context.Users
+            .Include(u => u.Tasks)
+            .ToListAsync();
     }
 
     public async Task<User?> GetByIdAsync(int id)
     {
-        var user =  await _context.Users.FindAsync(id);
-        return user;
+        return await _context.Users
+            .Include(u => u.Tasks)
+            .FirstOrDefaultAsync(u => u.Id == id);
     }
 
     public async Task<User> CreateAsync(User userModel)
