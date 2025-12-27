@@ -169,3 +169,7 @@ C:\IG Engeneering - work\To-Do Management API\To-Do Management API\obj\Debug\net
 C:\IG Engeneering - work\To-Do Management API\To-Do Management API\obj\Debug\net10.0\To-Do Management API.genruntimeconfig.cache
 C:\IG Engeneering - work\To-Do Management API\To-Do Management API\obj\Debug\net10.0\ref\To-Do Management API.dll
 C:\IG Engeneering - work\To-Do Management API\To-Do Management API\obj\Debug\net10.0\To-Do Management API.sourcelink.json
+C:\IG Engeneering - work\To-Do Management API\To-Do Management API\bin\Debug\net10.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+C:\IG Engeneering - work\To-Do Management API\To-Do Management API\bin\Debug\net10.0\Scrutor.dll
+C:\IG Engeneering - work\To-Do Management API\To-Do Management API\bin\Debug\net10.0\Swashbuckle.AspNetCore.Filters.dll
+C:\IG Engeneering - work\To-Do Management API\To-Do Management API\bin\Debug\net10.0\Swashbuckle.AspNetCore.Filters.Abstractions.dll

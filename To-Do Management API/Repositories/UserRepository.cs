@@ -12,10 +12,11 @@ public class UserRepository : IUserRepository
     {
         _context = context;
     }
-    public async Task<List<User>> GetAllAsync()
+    public async Task<List<User>> GetAllAsync(int offset, int limit)
     {
         return await _context.Users
-            .Include(u => u.Tasks)
+            .Skip(offset)
+            .Take(limit)
             .ToListAsync();
     }
 
@@ -59,5 +60,20 @@ public class UserRepository : IUserRepository
         _context.Users.Remove(user);
         await _context.SaveChangesAsync();
         return user;
+    }
+
+    public async Task<User?> GetByEmailAsync(string email)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email ==  email);
+        if (user != null)
+        {
+            return user;
+        }
+        return null;
+    }
+
+    public Task SaveChangesAsync()
+    {
+        return _context.SaveChangesAsync();
     }
 }

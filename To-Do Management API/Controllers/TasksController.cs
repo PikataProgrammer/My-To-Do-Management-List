@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using To_Do_Management_API.Data;
+using To_Do_Management_API.Dtos.LoginDto;
 using To_Do_Management_API.Dtos.TaskDto;
 using To_Do_Management_API.Entities;
 using To_Do_Management_API.Interfaces;
@@ -11,96 +13,61 @@ namespace To_Do_Management_API.Controllers;
 [ApiController]
 public class TasksController : ControllerBase
 {
-    private readonly ITaskRepository _taskRepo;
-    private readonly IUserRepository _userRepo;
-    public TasksController(ITaskRepository taskRepo, IUserRepository userRepo)
+    // private readonly ITaskRepository _taskRepo;
+    // private readonly IUserRepository _userRepo;
+    private readonly ITaskService _taskService;
+
+    public TasksController(ITaskService taskService)
     {
-        _taskRepo = taskRepo;
-        _userRepo = userRepo;
+        _taskService = taskService;
     }
+
 
     [HttpGet("user/{userId:int}")]
     public async Task<IActionResult> GetTasksByUserId(int userId)
     {
-        var tasks = await _taskRepo.GetAllAsync();
+        var tasks = await _taskService.GetAllTasks(null, null);
         var userTasks = tasks.Where(x => x.UserId == userId).ToList();
-        return Ok(userTasks.Select(x => x.ToTaskDto()));
+        return Ok(userTasks);
     }
-
+    
     [HttpGet]
-    public async Task<IActionResult> GetTasks()
+    public async Task<IActionResult> GetTasks(int? offset, int? limit)
     {
-        var tasks = await _taskRepo.GetAllAsync();
-        var taskDto = tasks.Select(x => x.ToTaskDto());
-        return Ok(taskDto);
+        var tasks = await _taskService.GetAllTasks(offset, limit);
+        return Ok(tasks);
     }
 
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetTaskById(int id)
     {
-        var task = await _taskRepo.GetByIdAsync(id);
-        
-        if (task == null)
-        {
-            return NotFound();
-        }
-        return Ok(task.ToTaskDto());
+        var response = await _taskService.GetTaskById(id);
+        return Ok(response);
     }
-
+    [Authorize]
     [HttpPost]
-    public async Task<IActionResult> CreateTask([FromBody] CreateTaskRequestDto dto)
+    public async Task<IActionResult> CreateTask([FromBody] CreateTaskRequestDto createTaskRequestDto)
     {
-        var allowedStatuses = new[] { "Pending", "InProgress", "Done" };
-        var allowedPriorities = new[] { "Low", "Medium", "High" };
-        if (!allowedStatuses.Contains(dto.Status))
-        {
-            return BadRequest($"Invalid Status. Allowed values: {string.Join(", ", allowedStatuses)}");
-        }
-
-        if (!allowedPriorities.Contains(dto.Priority))
-        {
-            return BadRequest($"Invalid Priority. Allowed values: {string.Join(", ", allowedPriorities)}");
-        }
-        
-        var taskModel = dto.ToTaskFromCreateDto();   
-        var user = await _userRepo.GetByIdAsync(dto.UserId);
-        if (user == null)
-        {
-            return BadRequest($"User {dto.UserId} does not exist.");
-        }
-        
-        user.Tasks.Add(taskModel);
-        await _taskRepo.CreateAsync(taskModel);
+        var result = await _taskService.CreateTask(createTaskRequestDto);
         
         return CreatedAtAction(
             nameof(GetTaskById),
-            new { id = taskModel.Id },
-            taskModel.ToTaskDto());
+            new { id = result.Id },
+            result);
     }
-
+    [Authorize]
     [HttpPut("{id:int}")]
     public async Task<IActionResult> UpdateTask(int id, [FromBody] UpdateTaskRequestDto dto)
     {
-        var updatedTask = await _taskRepo.UpdateAsync(id, dto.ToTaskFromUpdateDto());
+        var result =  await _taskService.UpdateTask(dto, id);
         
-        if (updatedTask == null)
-        {
-            return NotFound();
-        }
-        
-        return Ok(updatedTask.ToTaskDto());
+        return Ok(result);
     }
-
+    [Authorize]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteTask(int id)
     {
-        var existingTask = await _taskRepo.DeleteAsync(id);
-
-        if (existingTask == null)
-        {
-            return NotFound();
-        }
-        
-        return NoContent();
+        var result = await _taskService.DeleteTask(id);
+        return Ok("Deleted task: " + result);
     }
 }

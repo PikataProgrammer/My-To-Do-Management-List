@@ -1,74 +1,82 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using To_Do_Management_API.Data;
+using To_Do_Management_API.Dtos.LoginDto;
 using To_Do_Management_API.Dtos.UserDto;
 using To_Do_Management_API.Entities;
 using To_Do_Management_API.Interfaces;
 using To_Do_Management_API.Mappers;
+using JwtRegisteredClaimNames = Microsoft.IdentityModel.JsonWebTokens.JwtRegisteredClaimNames;
 
 namespace To_Do_Management_API.Controllers;
 [Route("api/[controller]")]
 [ApiController]
 public class UserController : ControllerBase
 {
-    private readonly IUserRepository _userRepo;
-    public UserController(IUserRepository userRepo)
+    // private readonly IConfiguration _configuration;
+    // private readonly IUserRepository _userRepo;
+    private readonly IUserService _userService;
+    public UserController(IUserService userService)
     {
-        _userRepo = userRepo;
+        _userService = userService;
+    }
+
+    [HttpPost("register")]
+    public async Task<IActionResult> Register([FromBody] CreateUserRequestDto createUserRequestDto)
+    {
+        var message = await _userService.RegisterUser(createUserRequestDto);
+        return Ok(new {message = $"{message}"});
+    }
+    [HttpPost("login")]
+    public async Task<IActionResult> Login([FromBody] LoginRequestDto loginRequestDto)
+    {
+        var token = await _userService.Login(loginRequestDto);
+
+        return Ok(new
+        {
+            token = new JwtSecurityTokenHandler().WriteToken(token),
+            expiration = token.ValidTo
+        });
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetUsers()
+    public async Task<IActionResult> GetUsers(int? offset, int? limit)
     {
-        var users = await _userRepo.GetAllAsync();
-        if (users == null)
-        {
-            return NotFound();
-        }
-        return Ok(users);
+        var response = await _userService.GetAllUsers(offset, limit);
+        return Ok(response);
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetUserById(int id)
     {
-        var user = await _userRepo.GetByIdAsync(id);
-        if (user == null)
-        {
-            return NotFound();
-        }
-        return Ok(user.ToUserDto());
+        var result = await _userService.GetUserById(id);
+        return Ok(result);
     }
-
+    [Authorize]
     [HttpPost]
-    public async Task<IActionResult> CreateAsync([FromBody] CreateUserRequestDto dto)
+    public async Task<IActionResult> CreateAsync([FromBody] CreateUserRequestDto createUserRequestDto)
     {
-        var userModel = dto.ToUserFromCreateUserDto();
-        await _userRepo.CreateAsync(userModel);
+        var response = await _userService.CreateUser(createUserRequestDto);
 
-        return CreatedAtAction(nameof(GetUserById), new { id = userModel.Id }, userModel);
+        return CreatedAtAction(nameof(GetUserById), new { id = response.Id }, response);
     }
-
+    [Authorize]
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateAsync(int id, [FromBody] UpdateUserRequestDto dto)
+    public async Task<IActionResult> UpdateAsync(int id, [FromBody] UpdateUserRequestDto updateUserRequestDto)
     {
-        var user = await _userRepo.UpdateAsync(id, dto.ToUserFromUpdateUserDto());
-        if (user == null)
-        {
-            return NotFound();
-        }
-        
-        return Ok(user.ToUserDto());
+        var response = await _userService.UpdateUser(id, updateUserRequestDto);
+        return Ok(response);
     }
-
+    [Authorize]
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteAsync(int id)
     {
-        var existingUser = await _userRepo.DeleteAsync(id);
-        if (existingUser == null)
-        {
-            return NotFound();
-        }
-        
-        return NoContent();
+        var response = await _userService.DeleteUser(id);
+        return Ok(response);
     }
 }

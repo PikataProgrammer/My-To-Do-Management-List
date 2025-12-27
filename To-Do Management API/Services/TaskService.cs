@@ -1,38 +1,93 @@
 ﻿using To_Do_Management_API.Data;
+using To_Do_Management_API.Dtos.TaskDto;
 using To_Do_Management_API.Entities;
 using To_Do_Management_API.Interfaces;
 
 namespace To_Do_Management_API.Services;
 
-public class TaskService : ITaskRepository
+public class TaskService : ITaskService
 {
-    private readonly ApplicationDbContext _context;
-    public TaskService(ApplicationDbContext context)
+    private ITaskRepository _taskRepository;
+    private IUserRepository _userRepository;
+
+    public TaskService(ITaskRepository taskRepository, IUserRepository userRepository)
     {
-        _context = context;
-    }
-    public Task<List<TodoTask>> GetAllAsync()
-    {
-        throw new NotImplementedException();
+        _taskRepository = taskRepository;
+        _userRepository = userRepository;
     }
 
-    public Task<TodoTask?> GetByIdAsync(int id)
+    public async Task<TaskDto> GetTaskById(int taskId)
     {
-        throw new NotImplementedException();
+        var task = await _taskRepository.GetByIdAsync(taskId);
+        if (task == null)
+        {
+            throw new KeyNotFoundException("Invalid taskId: " + taskId);
+        }
+        return new TaskDto(task);
     }
 
-    public Task<TodoTask> CreateAsync(TodoTask taskModel)
+    public async Task<List<TaskDto>> GetAllTasks(int? offset, int? limit)
     {
-        throw new NotImplementedException();
+        int safeOffset = offset ?? 0;
+        int safeLimit = limit ?? 10;
+        
+        if (safeLimit > 50)
+            safeLimit = 50;
+
+        if (safeOffset < 0)
+            safeOffset = 0;
+        
+       var tasks = await  _taskRepository.GetAllAsync(safeOffset, safeLimit);
+       
+       return tasks.Select(x => new TaskDto(x)).ToList();
+    }
+    public async Task<TaskDto> CreateTask(CreateTaskRequestDto dto)
+    {
+        var allowedStatuses = new[] { "Pending", "InProgress", "Done" };
+        var allowedPriorities = new[] { "Low", "Medium", "High" };
+        if (!allowedStatuses.Contains(dto.Status))
+        {
+            throw new ArgumentOutOfRangeException(nameof(dto.Status));
+            // return BadRequest($"Invalid Status. Allowed values: {string.Join(", ", allowedStatuses)}");
+        }
+
+        if (!allowedPriorities.Contains(dto.Priority))
+        {
+            throw new ArgumentOutOfRangeException(nameof(dto.Priority));
+            // return BadRequest($"Invalid Priority. Allowed values: {string.Join(", ", allowedPriorities)}");
+        }
+
+        var entity = new TodoTask(dto);
+        
+        var user = await _userRepository.GetByIdAsync(dto.UserId);
+        ArgumentNullException.ThrowIfNull(user);
+        
+        user.Tasks.Add(entity);
+        await _taskRepository.CreateAsync(entity);
+        await _taskRepository.SaveChangesAsync();
+        
+        return  new TaskDto(entity);
     }
 
-    public Task<TodoTask?> UpdateAsync(int id, TodoTask taskModel)
+    public async Task<TaskDto> UpdateTask(UpdateTaskRequestDto taskModel, int taskId)
     {
-        throw new NotImplementedException();
+        var todoTask = await _taskRepository.GetByIdAsync(taskId);
+        ArgumentNullException.ThrowIfNull(todoTask);
+        
+       todoTask.Update(taskModel);
+
+       await _taskRepository.SaveChangesAsync();
+       
+       return new TaskDto(todoTask);
     }
 
-    public Task<TodoTask?> DeleteAsync(int id)
+    public async Task<TaskDto> DeleteTask(int taskId)
     {
-        throw new NotImplementedException();
+        var existingTask = await _taskRepository.DeleteAsync(taskId);
+        ArgumentNullException.ThrowIfNull(existingTask);
+        await _taskRepository.SaveChangesAsync();
+
+        return new TaskDto(existingTask);
+
     }
 }

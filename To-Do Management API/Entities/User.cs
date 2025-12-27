@@ -1,4 +1,6 @@
-﻿namespace To_Do_Management_API.Entities;
+﻿using To_Do_Management_API.Dtos.UserDto;
+
+namespace To_Do_Management_API.Entities;
 
 public class User
 {
@@ -8,4 +10,21 @@ public class User
     public string Password { get; set; } = string.Empty;
 
     public List<TodoTask> Tasks { get; set; } = new();
+    
+    private User(){}
+
+    public User(CreateUserRequestDto createUserRequestDto)
+    {
+        Name = createUserRequestDto.Name;
+        Email = createUserRequestDto.Email;
+        Password = createUserRequestDto.Password;
+    }
+
+    public void Update(UpdateUserRequestDto updateUserRequestDto)
+    {
+        Name = updateUserRequestDto.Name;
+        Email = updateUserRequestDto.Email;
+        Password = updateUserRequestDto.Password;
+    }
+
 }
